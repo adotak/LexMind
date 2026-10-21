@@ -14,6 +14,13 @@ sources, or misquotes the text.
 - **Citation Checker** (`lexmind/citations.py`): checks each citation. The article must exist, it must be one of the
   sources the AI was given, and any quoted words must appear in it word for word. Sentences that fail are removed and
   shown separately.
+- **Counter-Argument Engine** (`POST /api/debate`, `lexmind/debate.py`): you describe your side (and, if you
+  know it, what the other side says). An AI opponent makes up to 3 attacks, aimed at the exceptions and limits in
+  the relevant articles. LexMind rebuts each one and an AI judge scores both sides from 0 to 10. Every attack and
+  rebuttal goes through the Citation Checker. An attack with nothing law-backed left is dropped, and an attack
+  LexMind can't answer from the law is flagged as a weak spot to prepare for. Without an AI key it still lists
+  the articles on your side and the exception clauses ("subject to…", "Nothing in…", "Provided that…") that the
+  other side is most likely to use.
 - **Constitution browser**: every part, chapter and article, with search.
 - **Works without an AI key**: without `OPENAI_API_KEY` it returns the best-matching articles instead of a written
   answer.
@@ -68,8 +75,8 @@ python scripts/build_library.py
 
 ## Roadmap
 
-1. Law Brain + Citation Checker (this release)
-2. Counter-Argument Engine: AI "you" vs AI "opponent", scored by an AI "judge"
+1. Law Brain + Citation Checker
+2. Counter-Argument Engine (this release)
 3. Contract Scanner: flags risky clauses using the Contract Act, 1872
 4. More laws (Pakistan Penal Code, KP rent and consumer laws), Supabase + pgvector search, Clerk accounts
 
