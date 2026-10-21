@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LexMind — Know your rights under the Constitution of Pakistan</title>
+<meta name="description" content="Ask a legal question and get a plain answer from the Constitution of Pakistan, with a verified source for every claim.">
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css">
+<script type="module" src="/static/js/main.js"></script>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/ask"><img src="/static/logo.svg" alt="" width="28" height="28"><span>Lex<b>Mind</b></span></a>
+  <nav>
+    <a href="#/ask" data-route="ask">Ask</a>
+    <a href="#/library" data-route="library">Constitution</a>
+    <a href="#/about" data-route="about">How it works</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section id="page-ask" class="page" hidden>
+    <div class="hero">
+      <h1>Know your rights.</h1>
+      <p>Ask a question about the law in Pakistan. Every answer comes from the Constitution, with the exact article to back it up.</p>
+    </div>
+    <form id="ask-form" class="ask">
+      <label for="question" class="sr-only">Your question</label>
+      <textarea id="question" rows="3" maxlength="1000" placeholder="e.g. Can the police keep me in custody without taking me to a magistrate?" required></textarea>
+      <div class="ask-row">
+        <div class="chips" id="examples"></div>
+        <button type="submit" id="ask-btn">Ask LexMind</button>
+      </div>
+    </form>
+    <div id="answer" aria-live="polite"></div>
+  </section>
+
+  <section id="page-library" class="page" hidden>
+    <div class="hero small">
+      <h1>The Constitution of Pakistan</h1>
+      <p id="lib-source"></p>
+    </div>
+    <input id="lib-filter" type="search" placeholder="Search articles, e.g. education, arrest, Article 19" aria-label="Search articles">
+    <div id="lib-results"></div>
+    <div id="outline"></div>
+  </section>
+
+  <section id="page-article" class="page" hidden>
+    <a href="#/library" class="back">← All articles</a>
+    <article id="article-view"></article>
+  </section>
+
+  <section id="page-about" class="page" hidden>
+    <div class="hero small"><h1>How LexMind works</h1></div>
+    <ol class="steps">
+      <li><b>Search.</b> Your question is matched against all articles of the Constitution of Pakistan.</li>
+      <li><b>Answer from sources only.</b> The AI writes an answer using just those articles, citing each one like <code>[Art. 10A]</code>.</li>
+      <li><b>Citation Checker.</b> Every citation is checked: the article must exist, must be one of the sources, and any quoted words must appear in it word for word. Sentences that fail are removed.</li>
+    </ol>
+    <div class="note">LexMind gives legal information, not legal advice. It is not a licensed advocate. For anything serious, such as a criminal charge, a court case or a large amount of money, talk to a lawyer.</div>
+  </section>
+</main>
+
+<footer class="foot">Legal information, not legal advice · Source: Constitution of the Islamic Republic of Pakistan (as amended up to 21 Nov 2025), National Assembly of Pakistan</footer>
+</body>
+</html>
