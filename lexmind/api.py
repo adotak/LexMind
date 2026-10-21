@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, brain
+from . import __version__, brain, debate
 from .library import Library, Section, default_library
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; "
@@ -27,6 +27,11 @@ SECURITY_HEADERS = {
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=1000)
+
+
+class DebateRequest(BaseModel):
+    position: str = Field(min_length=10, max_length=1500)
+    opponent: str = Field("", max_length=1500)
 
 
 class RateLimiter:
@@ -99,6 +104,15 @@ def create_app(library: Library | None = None, llm: Any = None, ask_per_minute: 
             return brain.ask(lib, body.question.strip(), llm=llm)
         except Exception as exc:  # the AI provider failing shouldn't look like a LexMind bug
             raise HTTPException(502, "The AI service didn't respond. Try again in a moment.") from exc
+
+    @app.post("/api/debate")
+    def run_debate(body: DebateRequest, request: Request) -> Any:
+        if not limiter.allow(client_key(request)):
+            return JSONResponse({"detail": "Too many requests. Wait a minute and try again."}, status_code=429)
+        try:
+            return debate.debate(lib, body.position.strip(), body.opponent.strip(), llm=llm)
+        except Exception as exc:
+            raise HTTPException(502, "The AI service didn't respond properly. Try again in a moment.") from exc
 
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:

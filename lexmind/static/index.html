@@ -14,6 +14,7 @@
   <a class="brand" href="#/ask"><img src="/static/logo.svg" alt="" width="28" height="28"><span>Lex<b>Mind</b></span></a>
   <nav>
     <a href="#/ask" data-route="ask">Ask</a>
+    <a href="#/debate" data-route="debate">Debate</a>
     <a href="#/library" data-route="library">Constitution</a>
     <a href="#/about" data-route="about">How it works</a>
   </nav>
@@ -36,6 +37,24 @@
     <div id="answer" aria-live="polite"></div>
   </section>
 
+  <section id="page-debate" class="page" hidden>
+    <div class="hero">
+      <h1>Never go in unprepared.</h1>
+      <p>Describe your side. An AI opponent attacks it using the Constitution, LexMind answers each attack, and an AI judge scores the debate.</p>
+    </div>
+    <form id="debate-form" class="ask">
+      <label for="position" class="field-label">Your side</label>
+      <textarea id="position" rows="3" minlength="10" maxlength="1500" placeholder="e.g. The police arrested my brother 3 days ago and still haven't taken him to a magistrate. That's illegal." required></textarea>
+      <label for="opp" class="field-label">What the other side says <small>(optional)</small></label>
+      <textarea id="opp" rows="2" maxlength="1500" placeholder="e.g. He is being held for security reasons."></textarea>
+      <div class="ask-row">
+        <div class="chips" id="debate-examples"></div>
+        <button type="submit" id="debate-btn">Start debate</button>
+      </div>
+    </form>
+    <div id="debate" aria-live="polite"></div>
+  </section>
+
   <section id="page-library" class="page" hidden>
     <div class="hero small">
       <h1>The Constitution of Pakistan</h1>
@@ -56,6 +75,7 @@
     <ol class="steps">
       <li><b>Search.</b> Your question is matched against all articles of the Constitution of Pakistan.</li>
       <li><b>Answer from sources only.</b> The AI writes an answer using just those articles, citing each one like <code>[Art. 10A]</code>.</li>
+      <li><b>Debate.</b> An AI opponent attacks your position using the exceptions and limits in the articles, LexMind rebuts each attack, and an AI judge scores both sides. Both sides go through the Citation Checker, so neither can win a point with a made-up article.</li>
       <li><b>Citation Checker.</b> Every citation is checked: the article must exist, must be one of the sources, and any quoted words must appear in it word for word. Sentences that fail are removed.</li>
     </ol>
     <div class="note">LexMind gives legal information, not legal advice. It is not a licensed advocate. For anything serious, such as a criminal charge, a court case or a large amount of money, talk to a lawyer.</div>
