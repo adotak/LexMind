@@ -40,6 +40,17 @@ def test_fundamental_rights_metadata(library: Library) -> None:
     ("freedom of speech and the press", "19"),
     ("Is slavery or forced labour allowed?", "11"),
     ("right to a fair trial", "10A"),
+    ("I want to criticise a minister online", "19"),
+    ("My sister's government school is charging fees", "25A"),
+    ("Can the government take my house without paying me", "24"),
+    ("Can I hold a rally against the government", "16"),
+    ("Can I start a political party", "17"),
+    ("Can the government read my phone messages", "14"),
+    ("My boss treats me differently because I am a woman", "25"),
+    ("Can I be tried twice for the same crime", "13"),
+    ("Can I be beaten in custody to confess", "14"),
+    ("Can I travel abroad", "15"),
+    ("How long is the term of the National Assembly", "52"),
 ])
 def test_search_finds_the_right_article(library: Library, question: str, expected: str) -> None:
     top = [s.article for s, _ in library.search(question, limit=3)]
@@ -74,3 +85,14 @@ def test_tokenizer() -> None:
     assert stem("liberties") == "liberty"
     assert tokenize("The police ARRESTED me!") == ["police", "arrest"]
     assert "custody" in expand("police")
+
+
+def test_fundamental_rights_rank_above_equal_matches(library: Library) -> None:
+    plain = Library.__new__(Library)
+    plain.__dict__.update(library.__dict__)
+    plain.RIGHTS_BOOST = 1.0
+    query = "Can I use my own language"
+    boosted = {s.article: score for s, score in library.search(query)}
+    flat = {s.article: score for s, score in plain.search(query)}
+    assert boosted["28"] == pytest.approx(flat["28"] * 1.5, rel=0.01)
+    assert boosted["251"] == flat["251"]

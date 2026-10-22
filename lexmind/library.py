@@ -43,6 +43,26 @@ SYNONYMS = {
     "court": ["court", "judicial"],
     "torture": ["torture", "dignity", "evidence"],
 }
+# Everyday words people use for the same rights.
+for words, terms in {
+    "criticise criticize criticism opinion opinions post online internet media newspaper newspapers journalist "
+    "journalists reporting tv channel": ["speech", "expression", "press"],
+    "fee fees schooling tuition": ["education", "free", "compulsory"],
+    "seize seized confiscate acquire compensation paying": ["property", "acquisition", "compensation"],
+    "rally rallies march demonstration demonstrations gathering": ["assembly", "assemble", "peacefully"],
+    "party parties": ["political", "association"],
+    "union unions": ["association", "unions"],
+    "search raid phone messages calls surveillance spy spying": ["privacy", "home"],
+    "boss employer": ["employment", "service"],
+    "woman girl": ["sex", "women"],
+    "discriminate discrimination differently unequal unfairly": ["discrimination", "equal"],
+    "twice again": ["same", "offence", "once"],
+    "crime crimes": ["offence"],
+    "travel abroad city relocate": ["movement", "move", "freely", "reside"],
+    "beaten beat beating hit confess confession": ["torture", "evidence", "dignity"],
+}.items():
+    for word in words.split():
+        SYNONYMS.setdefault(word, []).extend(terms)
 ARTICLE_REF = re.compile(r"\b(?:art(?:icle)?s?\.?)\s*(\d{1,3}[A-Za-z]{0,3})\b", re.I)
 
 
@@ -81,6 +101,10 @@ class Library:
     """Search and lookup over one law's sections."""
 
     MIN_SHARE = 0.3  # drop weak matches scoring under 30% of the best one
+    # Most plain-English questions are about people's rights, so Fundamental Rights articles get a lift over
+    # same-scoring procedural articles (e.g. "my own language" -> Art. 28 before Art. 251).
+    RIGHTS_BOOST = 1.5
+    RIGHTS_CHAPTER = "Fundamental Rights"
 
     K1 = 1.4
     B = 0.75
@@ -123,6 +147,8 @@ class Library:
                 if tf:
                     score += weight * self._idf[t] * tf * (self.K1 + 1) / (tf + norm)
             if score > 0:
+                if self.sections[i].chapter == self.RIGHTS_CHAPTER:
+                    score *= self.RIGHTS_BOOST
                 scores.append((score, i))
         scores.sort(reverse=True)
         floor = scores[0][0] * self.MIN_SHARE if scores else 0.0
