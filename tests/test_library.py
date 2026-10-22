@@ -49,7 +49,7 @@ def test_fundamental_rights_metadata(library: Library) -> None:
     ("My boss treats me differently because I am a woman", "25"),
     ("Can I be tried twice for the same crime", "13"),
     ("Can I be beaten in custody to confess", "14"),
-    ("Can I travel abroad", "15"),
+    ("Can I travel to another province", "15"),
     ("How long is the term of the National Assembly", "52"),
 ])
 def test_search_finds_the_right_article(library: Library, question: str, expected: str) -> None:
@@ -96,3 +96,9 @@ def test_fundamental_rights_rank_above_equal_matches(library: Library) -> None:
     flat = {s.article: score for s, score in plain.search(query)}
     assert boosted["28"] == pytest.approx(flat["28"] * 1.5, rel=0.01)
     assert boosted["251"] == flat["251"]
+
+
+def test_everyday_words_dont_hijack_procedural_questions(library: Library) -> None:
+    assert library.search("What is the term of the National Assembly again?")[0][0].article == "52"
+    city = [s.article for s, _ in library.search("How do city governments get elected?", limit=3)]
+    assert "140A" in city and "15" not in city
