@@ -56,9 +56,9 @@ for words, terms in {
     "boss employer": ["employment", "service"],
     "woman girl": ["sex", "women"],
     "discriminate discrimination differently unequal unfairly": ["discrimination", "equal"],
-    "twice again": ["same", "offence", "once"],
+    "twice": ["same", "offence", "once"],
     "crime crimes": ["offence"],
-    "travel abroad city relocate": ["movement", "move", "freely", "reside"],
+    "travel relocate": ["movement", "move", "freely", "reside"],
     "beaten beat beating hit confess confession": ["torture", "evidence", "dignity"],
 }.items():
     for word in words.split():
