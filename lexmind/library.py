@@ -57,6 +57,8 @@ for words, terms in {
     "woman girl": ["sex", "women"],
     "discriminate discrimination differently unequal unfairly": ["discrimination", "equal"],
     "twice": ["same", "offence", "once"],
+    "prosecute prosecution retried retry": ["prosecuted"],
+    "live living settle shift": ["reside", "settle", "movement"],
     "crime crimes": ["offence"],
     "travel relocate": ["movement", "move", "freely", "reside"],
     "beaten beat beating hit confess confession": ["torture", "evidence", "dignity"],
