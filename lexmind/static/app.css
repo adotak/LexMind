@@ -16,10 +16,10 @@ main:focus{outline:none}
 .brand{display:flex;align-items:center;gap:10px;color:var(--text);text-decoration:none;font-size:1.25rem;font-weight:700;letter-spacing:-.2px}
 .brand:hover{color:var(--text)}
 .brand b{color:var(--gold)}
-nav{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px}
-nav a{color:var(--muted);text-decoration:none;padding:6px 14px;border-radius:999px;font-weight:600;font-size:.93rem;white-space:nowrap;transition:color .15s,background .15s}
-nav a:hover{color:var(--text)}
-nav a.active{background:var(--card2);color:var(--text);box-shadow:0 0 0 1px var(--line2) inset}
+.top nav{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px}
+.top nav a{color:var(--muted);text-decoration:none;padding:6px 14px;border-radius:999px;font-weight:600;font-size:.93rem;white-space:nowrap;transition:color .15s,background .15s}
+.top nav a:hover{color:var(--text)}
+.top nav a.active{background:var(--card2);color:var(--text);box-shadow:0 0 0 1px var(--line2) inset}
 
 main{flex:1;width:100%;max-width:860px;margin:0 auto;padding:36px 20px 64px}
 .eyebrow{display:inline-block;color:var(--gold)!important;font-size:.78rem!important;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin:0 0 4px!important}
@@ -168,8 +168,8 @@ code{background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1
 @media (max-width:560px){
   .top{flex-direction:column;align-items:stretch;gap:10px;padding:10px 14px}
   .brand{justify-content:center}
-  nav{justify-content:space-between;overflow-x:auto}
-  nav a{padding:6px 10px;font-size:.86rem;flex:1;text-align:center}
+  .top nav{justify-content:space-between;overflow-x:auto}
+  .top nav a{padding:6px 10px;font-size:.86rem;flex:1;text-align:center}
   main{padding:24px 16px 48px}
   .hero h1{font-size:2.05rem}
   .hero.small h1{font-size:1.55rem}
