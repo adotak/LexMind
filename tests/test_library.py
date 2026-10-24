@@ -50,6 +50,8 @@ def test_fundamental_rights_metadata(library: Library) -> None:
     ("Can I be tried twice for the same crime", "13"),
     ("Can I be beaten in custody to confess", "14"),
     ("Can I travel to another province", "15"),
+    ("Can they prosecute me again?", "13"),
+    ("Can I live in another city?", "15"),
     ("How long is the term of the National Assembly", "52"),
 ])
 def test_search_finds_the_right_article(library: Library, question: str, expected: str) -> None:
@@ -102,3 +104,4 @@ def test_everyday_words_dont_hijack_procedural_questions(library: Library) -> No
     assert library.search("What is the term of the National Assembly again?")[0][0].article == "52"
     city = [s.article for s, _ in library.search("How do city governments get elected?", limit=3)]
     assert "140A" in city and "15" not in city
+    assert "13" not in [s.article for s, _ in library.search("Can the state prosecute a minister?", limit=3)]
