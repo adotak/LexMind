@@ -25,8 +25,35 @@ function citeLinks(text) {
   return esc(text).replace(/\[Art\.?\s*(\d{1,3}[A-Za-z]{0,3})\]/gi, (_, a) => `<a class="cite" href="#/article/${a.toUpperCase()}">Art. ${a.toUpperCase()}</a>`);
 }
 
+const TOPICS = ["Arrest", "Free speech", "Education", "Property", "Religion", "Privacy", "Equality", "Elections"];
+const TITLES = { ask: "Ask", debate: "Debate", library: "Constitution", about: "How it works" };
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function paragraphs(text) {
-  return text.split(/\n(?=\(|Provided|Explanation)/).map((p) => `<p>${esc(p)}</p>`).join("");
+  return text.split(/\n(?=\(|Provided|Explanation)/)
+    .map((p) => `<p${/^(\(\w+\)\s*)?(Provided|Nothing in)/.test(p.trim()) ? ' class="limit"' : ""}>${esc(p)}</p>`).join("");
+}
+
+function skeleton(label, lines = 3) {
+  const widths = ["w80", "", "w60", "w40"];
+  return `<div class="card skel-card" role="status"><p class="status">${esc(label)}<span class="dots"></span></p>
+    ${Array.from({ length: lines }, (_, i) => `<div class="skel ${widths[i % widths.length]}"></div>`).join("")}</div>`;
+}
+
+function errorCard(message, retryForm) {
+  const retry = retryForm ? `<button type="button" class="btn ghost retry" data-form="${retryForm}">Try again</button>` : "";
+  return `<div class="card err fade-in" role="alert"><p>${esc(message)}</p>${retry}</div>`;
+}
+
+function setBusy(btn, busy, label) {
+  btn.disabled = busy;
+  btn.setAttribute("aria-busy", String(busy));
+  btn.textContent = label;
+}
+
+function reveal(el) {
+  const top = el.getBoundingClientRect().top;
+  if (top > window.innerHeight * 0.6) el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
 }
 
 function sourceItem(s, i) {
@@ -49,10 +76,10 @@ function renderAnswer(a) {
          <ul class="removed">${a.removed.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></details>`
     : "";
   $("#answer").innerHTML = `
-    <div class="card fade-in"><div class="meta">${badges}</div><div class="answer-text">${citeLinks(a.answer)}</div></div>
+    <div class="card answer-card fade-in"><div class="meta">${badges}</div><div class="answer-text">${citeLinks(a.answer)}</div></div>
     ${removed}
-    <h3>Sources</h3>
-    ${a.sources.map(sourceItem).join("") || '<p class="loading">No matching articles.</p>'}
+    <div class="sec"><h2>Sources</h2><small>${a.sources.length} article${a.sources.length === 1 ? "" : "s"}</small></div>
+    ${a.sources.map(sourceItem).join("") || '<p class="empty">No matching articles. Try different words, or browse the <a href="#/library">Constitution</a>.</p>'}
     <div class="note">${esc(a.disclaimer)}</div>`;
 }
 
@@ -61,14 +88,16 @@ async function onAsk(e) {
   const question = $("#question").value.trim();
   if (question.length < 3) return;
   const btn = $("#ask-btn");
-  btn.disabled = true;
-  $("#answer").innerHTML = `<p class="loading">Reading the Constitution<span class="dots"></span></p>`;
+  setBusy(btn, true, "Thinking…");
+  $("#ask-intro").hidden = true;
+  $("#answer").innerHTML = skeleton("Reading the Constitution");
   try {
     renderAnswer(await api("/api/ask", { method: "POST", body: JSON.stringify({ question }) }));
   } catch (err) {
-    $("#answer").innerHTML = `<div class="card"><span class="badge bad">${esc(err.message)}</span></div>`;
+    $("#answer").innerHTML = errorCard(err.message, "ask-form");
   } finally {
-    btn.disabled = false;
+    setBusy(btn, false, "Ask LexMind");
+    reveal($("#answer"));
   }
 }
 
@@ -103,7 +132,7 @@ function roundItem(r, i) {
 
 function renderDebate(d) {
   const weak = d.verdict && d.verdict.weak_spots.length
-    ? `<div class="card fade-in"><h3 class="h-small">Prepare for these</h3><ul>${d.verdict.weak_spots.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>`
+    ? `<div class="card weak fade-in"><h3 class="h-small">Prepare for these</h3><ul>${d.verdict.weak_spots.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>`
     : "";
   const limits = d.limits.length
     ? `<details><summary><span>Exceptions the other side can use (${d.limits.length})</span></summary>
@@ -111,7 +140,7 @@ function renderDebate(d) {
     : "";
   $("#debate").innerHTML = `
     ${scorecard(d)}
-    ${d.rounds.length ? `<h3>Attacks and your answers</h3>${d.rounds.map(roundItem).join("")}` : ""}
+    ${d.rounds.length ? `<div class="sec"><h2>Attacks and your answers</h2><small>${d.rounds.filter((r) => r.rebuttal).length} of ${d.rounds.length} answered</small></div>${d.rounds.map(roundItem).join("")}` : ""}
     ${weak}
     ${limits}
     ${d.sources.length ? `<details><summary><span>Articles used (${d.sources.length})</span></summary>${d.sources.map((s) => sourceItem(s, 1)).join("")}</details>` : ""}
@@ -125,28 +154,46 @@ async function onDebate(e) {
   const position = $("#position").value.trim();
   if (position.length < 10) return;
   const btn = $("#debate-btn");
-  btn.disabled = true;
-  $("#debate").innerHTML = `<p class="loading">Opponent is preparing attacks<span class="dots"></span></p>`;
+  setBusy(btn, true, "Debating…");
+  $("#debate-intro").hidden = true;
+  $("#debate").innerHTML = skeleton("The opponent is preparing attacks", 4);
   try {
     renderDebate(await api("/api/debate", { method: "POST", body: JSON.stringify({ position, opponent: $("#opp").value.trim() }) }));
   } catch (err) {
-    $("#debate").innerHTML = `<div class="card"><span class="badge bad">${esc(err.message)}</span></div>`;
+    $("#debate").innerHTML = errorCard(err.message, "debate-form");
   } finally {
-    btn.disabled = false;
+    setBusy(btn, false, "Start debate");
+    reveal($("#debate"));
   }
 }
 
 let outline = null;
+let order = [];
+async function loadOutline() {
+  if (outline) return outline;
+  const lib = await api("/api/library");
+  outline = lib.outline;
+  order = outline.flatMap((p) => p.chapters.flatMap((c) => c.articles));
+  $("#lib-source").innerHTML = `${esc(lib.source_name)}. <a href="${esc(lib.source_url)}" target="_blank" rel="noopener">Official PDF ↗</a>`;
+  return outline;
+}
+
+let libraryLoading = false;
 async function showLibrary() {
-  if (!outline) {
-    const lib = await api("/api/library");
-    outline = lib.outline;
-    $("#lib-source").innerHTML = `${esc(lib.source_name)}. <a href="${esc(lib.source_url)}" target="_blank" rel="noopener">Official PDF</a>`;
+  if (libraryLoading || $("#outline details")) return;
+  libraryLoading = true;
+  $("#outline").innerHTML = skeleton("Loading the Constitution", 4);
+  try {
+    await loadOutline();
     $("#outline").innerHTML = outline.map((p) => `
       <details><summary><span>${esc(p.part)}</span><small>${p.chapters.reduce((n, c) => n + c.articles.length, 0)} articles</small></summary>
         ${p.chapters.map((c) => `${c.chapter ? `<h4>${esc(c.chapter)}</h4>` : ""}<div class="list">${c.articles.map((a) =>
           `<a href="#/article/${esc(a.article)}"><b>${esc(a.article)}</b>${esc(a.title)}</a>`).join("")}</div>`).join("")}
       </details>`).join("");
+  } catch (err) {
+    $("#outline").innerHTML = errorCard(err.message);
+  } finally {
+    libraryLoading = false;
   }
 }
 
@@ -156,22 +203,38 @@ function onFilter() {
   filterTimer = setTimeout(async () => {
     const q = $("#lib-filter").value.trim();
     $("#outline").hidden = q.length >= 2;
+    document.querySelectorAll("#topics .chip").forEach((c) => c.classList.toggle("on", c.textContent.toLowerCase() === q.toLowerCase()));
     if (q.length < 2) { $("#lib-results").innerHTML = ""; return; }
-    const hits = await api(`/api/search?q=${encodeURIComponent(q)}&limit=10`);
-    $("#lib-results").innerHTML = hits.map(sourceItem).join("") || '<p class="loading">No matching articles.</p>';
+    try {
+      const hits = await api(`/api/search?q=${encodeURIComponent(q)}&limit=10`);
+      if (q !== $("#lib-filter").value.trim()) return;
+      $("#lib-results").innerHTML = hits.length
+        ? `<p class="count">${hits.length === 10 ? "Top 10" : hits.length} matching article${hits.length === 1 ? "" : "s"}</p>${hits.map(sourceItem).join("")}`
+        : `<p class="empty">No articles match “${esc(q)}”. Try a simpler word, like “arrest” or “school”.</p>`;
+    } catch (err) {
+      $("#lib-results").innerHTML = errorCard(err.message);
+    }
   }, 250);
 }
 
 async function showArticle(num) {
   const view = $("#article-view");
-  view.innerHTML = `<p class="loading">Loading<span class="dots"></span></p>`;
+  view.innerHTML = skeleton("Loading the article", 6);
   try {
     const a = await api(`/api/articles/${encodeURIComponent(num)}`);
-    view.innerHTML = `<h1 class="art-title">Article ${esc(a.article)}. ${esc(a.title)}</h1>
+    document.title = `Article ${a.article}: ${a.title} · LexMind`;
+    view.innerHTML = `<h1 class="art-title" tabindex="-1"><span>Article ${esc(a.article)}.</span> ${esc(a.title)}</h1>
       <div class="art-meta">${esc(a.part)}${a.chapter ? " · " + esc(a.chapter) : ""} · page ${a.page} of the official text</div>
-      <div class="card art-text">${paragraphs(a.text)}</div>`;
+      <div class="art-actions"><button type="button" class="btn ghost" id="ask-about" data-article="${esc(a.article)}">Ask about this article</button></div>
+      <div class="card art-text">${paragraphs(a.text)}</div>
+      <nav class="art-nav" aria-label="Nearby articles"></nav>`;
+    await loadOutline().catch(() => null);
+    const i = order.findIndex((x) => x.article === a.article);
+    const link = (x, cls, label) => x ? `<a class="${cls}" href="#/article/${esc(x.article)}"><small>${label}</small><span>Art. ${esc(x.article)} · ${esc(x.title)}</span></a>` : "";
+    if (i >= 0) view.querySelector(".art-nav").innerHTML = link(order[i - 1], "prev", "← Previous") + link(order[i + 1], "next", "Next →");
   } catch (err) {
-    view.innerHTML = `<div class="card"><span class="badge bad">${esc(err.message)}</span></div>`;
+    document.title = "Article not found · LexMind";
+    view.innerHTML = `<h1 class="art-title" tabindex="-1">Article ${esc(num)}</h1>${errorCard(err.message)}<p class="empty">Browse <a href="#/library">all articles</a> or search for a topic.</p>`;
   }
 }
 
@@ -179,26 +242,59 @@ function route() {
   const [, page = "ask", arg] = (location.hash || "#/ask").split("/");
   const id = { ask: "ask", debate: "debate", library: "library", article: "article", about: "about" }[page] || "ask";
   document.querySelectorAll(".page").forEach((p) => { p.hidden = p.id !== `page-${id}`; });
-  document.querySelectorAll("nav a").forEach((a) => a.classList.toggle("active", a.dataset.route === (id === "article" ? "library" : id)));
+  const current = id === "article" ? "library" : id;
+  document.querySelectorAll(".top nav a").forEach((a) => {
+    a.classList.toggle("active", a.dataset.route === current);
+    if (a.dataset.route === current) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  if (id !== "article") document.title = id === "ask" ? "LexMind — Know your rights under the Constitution of Pakistan" : `${TITLES[id]} · LexMind`;
   if (id === "library") showLibrary();
   if (id === "article" && arg) showArticle(decodeURIComponent(arg));
   window.scrollTo(0, 0);
 }
 
+function onRouteChange() {
+  route();
+  // Move keyboard and screen-reader focus to the new page, like a real page load.
+  const h1 = document.querySelector(".page:not([hidden]) h1");
+  if (h1) { h1.setAttribute("tabindex", "-1"); h1.focus({ preventScroll: true }); }
+}
+
 $("#examples").innerHTML = EXAMPLES.map((q) => `<button type="button" class="chip">${esc(q)}</button>`).join("");
 $("#examples").addEventListener("click", (e) => {
-  if (e.target.classList.contains("chip")) { $("#question").value = e.target.textContent; $("#ask-form").requestSubmit(); }
+  const chip = e.target.closest(".chip");
+  if (chip) { $("#question").value = chip.textContent; $("#ask-form").requestSubmit(); }
 });
 $("#ask-form").addEventListener("submit", onAsk);
 $("#debate-examples").innerHTML = DEBATE_EXAMPLES.map(([p], i) => `<button type="button" class="chip" data-i="${i}">${esc(p.length > 48 ? p.slice(0, 46) + "…" : p)}</button>`).join("");
 $("#debate-examples").addEventListener("click", (e) => {
-  const i = e.target.dataset.i;
+  const i = e.target.closest(".chip")?.dataset.i;
   if (i === undefined) return;
   [$("#position").value, $("#opp").value] = DEBATE_EXAMPLES[i];
   $("#debate-form").requestSubmit();
 });
 $("#debate-form").addEventListener("submit", onDebate);
-$("#question").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("#ask-form").requestSubmit(); });
+const submitOnCtrlEnter = (form) => (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); form.requestSubmit(); } };
+$("#question").addEventListener("keydown", submitOnCtrlEnter($("#ask-form")));
+$("#position").addEventListener("keydown", submitOnCtrlEnter($("#debate-form")));
+$("#opp").addEventListener("keydown", submitOnCtrlEnter($("#debate-form")));
 $("#lib-filter").addEventListener("input", onFilter);
-window.addEventListener("hashchange", route);
+$("#topics").innerHTML = TOPICS.map((t) => `<button type="button" class="chip">${esc(t)}</button>`).join("");
+$("#topics").addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (!chip) return;
+  $("#lib-filter").value = chip.classList.contains("on") ? "" : chip.textContent;
+  onFilter();
+});
+document.addEventListener("click", (e) => {
+  const retry = e.target.closest(".retry");
+  if (retry) document.getElementById(retry.dataset.form).requestSubmit();
+  const about = e.target.closest("#ask-about");
+  if (about) {
+    $("#question").value = `What does Article ${about.dataset.article} say, in simple words?`;
+    location.hash = "#/ask";
+    $("#ask-form").requestSubmit();
+  }
+});
+window.addEventListener("hashchange", onRouteChange);
 route();
