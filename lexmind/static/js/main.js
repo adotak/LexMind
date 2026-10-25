@@ -25,7 +25,18 @@ function citeLinks(text) {
   return esc(text).replace(/\[Art\.?\s*(\d{1,3}[A-Za-z]{0,3})\]/gi, (_, a) => `<a class="cite" href="#/article/${a.toUpperCase()}">Art. ${a.toUpperCase()}</a>`);
 }
 
-const TOPICS = ["Arrest", "Free speech", "Education", "Property", "Religion", "Privacy", "Equality", "Elections"];
+// [button label, search query]. Queries are tuned so each button finds its own articles (see tests/test_library.py).
+const TOPICS = [
+  ["Arrest", "arrest detention"],
+  ["Fair trial", "fair trial"],
+  ["Free speech", "speech"],
+  ["Education", "education"],
+  ["Property", "property"],
+  ["Religion", "religion"],
+  ["Privacy", "privacy"],
+  ["Equality", "equality discrimination"],
+  ["Elections", "elections"],
+];
 const TITLES = { ask: "Ask", debate: "Debate", library: "Constitution", about: "How it works" };
 const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -203,7 +214,7 @@ function onFilter() {
   filterTimer = setTimeout(async () => {
     const q = $("#lib-filter").value.trim();
     $("#outline").hidden = q.length >= 2;
-    document.querySelectorAll("#topics .chip").forEach((c) => c.classList.toggle("on", c.textContent.toLowerCase() === q.toLowerCase()));
+    document.querySelectorAll("#topics .chip").forEach((c) => c.classList.toggle("on", c.dataset.q === q.toLowerCase()));
     if (q.length < 2) { $("#lib-results").innerHTML = ""; return; }
     try {
       const hits = await api(`/api/search?q=${encodeURIComponent(q)}&limit=10`);
@@ -279,11 +290,11 @@ $("#question").addEventListener("keydown", submitOnCtrlEnter($("#ask-form")));
 $("#position").addEventListener("keydown", submitOnCtrlEnter($("#debate-form")));
 $("#opp").addEventListener("keydown", submitOnCtrlEnter($("#debate-form")));
 $("#lib-filter").addEventListener("input", onFilter);
-$("#topics").innerHTML = TOPICS.map((t) => `<button type="button" class="chip">${esc(t)}</button>`).join("");
+$("#topics").innerHTML = TOPICS.map(([label, q]) => `<button type="button" class="chip" data-q="${esc(q)}">${esc(label)}</button>`).join("");
 $("#topics").addEventListener("click", (e) => {
   const chip = e.target.closest(".chip");
   if (!chip) return;
-  $("#lib-filter").value = chip.classList.contains("on") ? "" : chip.textContent;
+  $("#lib-filter").value = chip.classList.contains("on") ? "" : chip.dataset.q;
   onFilter();
 });
 document.addEventListener("click", (e) => {

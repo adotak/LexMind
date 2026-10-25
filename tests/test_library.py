@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import pytest
 
-from lexmind.library import Library, expand, stem, tokenize
+from lexmind.library import Library, default_library, expand, stem, tokenize
 
 
 def test_constitution_is_complete(library: Library) -> None:
@@ -105,3 +108,27 @@ def test_everyday_words_dont_hijack_procedural_questions(library: Library) -> No
     city = [s.article for s, _ in library.search("How do city governments get elected?", limit=3)]
     assert "140A" in city and "15" not in city
     assert "13" not in [s.article for s, _ in library.search("Can the state prosecute a minister?", limit=3)]
+
+
+TOPIC_TOP_ARTICLE = {
+    "Arrest": "10",
+    "Fair trial": "10A",
+    "Free speech": "19",
+    "Education": "25A",
+    "Property": "24",
+    "Religion": "20",
+    "Privacy": "14",
+    "Equality": "25",
+    "Elections": "225",
+}
+
+
+def test_constitution_topic_buttons_find_their_articles() -> None:
+    js = (Path(__file__).parents[1] / "lexmind/static/js/main.js").read_text()
+    topics = dict(re.findall(r'\["([^"]+)", "([^"]+)"\]', js.split("const TOPICS")[1].split("];")[0]))
+    assert set(topics) == set(TOPIC_TOP_ARTICLE)
+    lib = default_library()
+    for label, query in topics.items():
+        hits = [s.article for s, _ in lib.search(query, limit=10)]
+        assert hits[:1] == [TOPIC_TOP_ARTICLE[label]], (label, hits)
+    assert "25A" not in [s.article for s, _ in lib.search(topics["Free speech"], limit=10)]
