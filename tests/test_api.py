@@ -100,6 +100,16 @@ def test_rate_limiter_disabled_and_window() -> None:
     assert lim.allow("a") and not lim.allow("a") and lim.allow("b")
 
 
+def test_rate_limiter_discards_inactive_clients(monkeypatch: pytest.MonkeyPatch) -> None:
+    now = iter((0.0, 61.0))
+    monkeypatch.setattr("lexmind.api.time.monotonic", lambda: next(now))
+    lim = RateLimiter(1)
+    assert lim.allow("a")
+    assert lim.allow("b")
+    assert "a" not in lim.hits
+    assert "b" in lim.hits
+
+
 def test_enabled_reads_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert brain.enabled() is False
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
