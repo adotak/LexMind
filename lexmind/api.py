@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import os
 import time
-from collections import defaultdict, deque
+from collections import deque
 from importlib import resources
+from threading import Lock
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -39,19 +40,29 @@ class RateLimiter:
 
     def __init__(self, per_minute: int):
         self.per_minute = per_minute
-        self.hits: dict[str, deque[float]] = defaultdict(deque)
+        self.hits: dict[str, deque[float]] = {}
+        self._lock = Lock()
+        self._next_cleanup = 0.0
 
     def allow(self, key: str) -> bool:
         if self.per_minute <= 0:
             return True
         now = time.monotonic()
-        q = self.hits[key]
-        while q and now - q[0] > 60:
-            q.popleft()
-        if len(q) >= self.per_minute:
-            return False
-        q.append(now)
-        return True
+        with self._lock:
+            if now >= self._next_cleanup:
+                self.hits = {
+                    client: hits
+                    for client, hits in self.hits.items()
+                    if hits and now - hits[-1] <= 60
+                }
+                self._next_cleanup = now + 60
+            q = self.hits.setdefault(key, deque())
+            while q and now - q[0] > 60:
+                q.popleft()
+            if len(q) >= self.per_minute:
+                return False
+            q.append(now)
+            return True
 
 
 def client_key(request: Request) -> str:
