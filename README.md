@@ -49,6 +49,31 @@ Turn on AI answers with `export OPENAI_API_KEY=sk-...` (optional: `OPENAI_MODEL`
 
 Checks: `ruff check . && mypy && pytest -q --cov` (coverage must stay at least 85%).
 
+## API quick reference
+
+The interactive API documentation is available at `http://127.0.0.1:8000/docs` while the server is running.
+The most useful endpoints can also be called directly:
+
+```bash
+# Check the loaded law data and whether AI answers are enabled
+curl http://127.0.0.1:8000/api/health
+
+# Search the Constitution
+curl --get http://127.0.0.1:8000/api/search \
+  --data-urlencode "q=right to education"
+
+# Ask a question (requires OPENAI_API_KEY for a generated answer)
+curl -X POST http://127.0.0.1:8000/api/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Can police hold me without a magistrate?"}'
+
+# Test both sides of a legal position
+curl -X POST http://127.0.0.1:8000/api/debate \
+  -H "Content-Type: application/json" \
+  -d '{"position":"A detained person should be produced before a magistrate promptly.",
+       "opponent":"The detention is justified by a security concern."}'
+```
+
 Rebuild the law data after a new amendment (update `SOURCE_URL` in the script first):
 
 ```bash
