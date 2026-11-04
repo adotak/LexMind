@@ -11,7 +11,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from . import __version__, brain, debate
 from .library import Library, Section, default_library
@@ -29,10 +29,31 @@ SECURITY_HEADERS = {
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=1000)
 
+    @field_validator("question")
+    @classmethod
+    def question_must_contain_text(cls, value: str) -> str:
+        value = value.strip()
+        if len(value) < 3:
+            raise ValueError("Question must contain at least 3 non-space characters")
+        return value
+
 
 class DebateRequest(BaseModel):
     position: str = Field(min_length=10, max_length=1500)
     opponent: str = Field("", max_length=1500)
+
+    @field_validator("position")
+    @classmethod
+    def position_must_contain_text(cls, value: str) -> str:
+        value = value.strip()
+        if len(value) < 10:
+            raise ValueError("Position must contain at least 10 non-space characters")
+        return value
+
+    @field_validator("opponent")
+    @classmethod
+    def normalize_opponent(cls, value: str) -> str:
+        return value.strip()
 
 
 class RateLimiter:
@@ -73,7 +94,11 @@ def client_key(request: Request) -> str:
 def create_app(library: Library | None = None, llm: Any = None, ask_per_minute: int | None = None) -> FastAPI:
     lib = library or default_library()
     if ask_per_minute is None:
-        ask_per_minute = int(os.environ.get("LEXMIND_ASK_PER_MINUTE", "10"))
+        raw_limit = os.environ.get("LEXMIND_ASK_PER_MINUTE", "10")
+        try:
+            ask_per_minute = int(raw_limit)
+        except ValueError as exc:
+            raise ValueError("LEXMIND_ASK_PER_MINUTE must be an integer") from exc
     limiter = RateLimiter(ask_per_minute)
     static = resources.files("lexmind").joinpath("static")
     app = FastAPI(title="LexMind", version=__version__, docs_url="/docs", redoc_url=None)
