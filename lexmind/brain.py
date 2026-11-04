@@ -70,10 +70,14 @@ def ask(library: Library, question: str, llm: Any = None) -> Answer:
     hits = library.search(question, limit=MAX_SOURCES)
     sources = [Source(article=s.article, title=s.title, chapter=s.chapter, part=s.part, snippet=snippet(s.text),
                       score=score) for s, score in hits]
+    if not hits:
+        return Answer(question=question, answer="No article of the Constitution matched your question. "
+                      "Try different words.", mode="search", sources=[], citations=[], removed=[])
     if llm is None and not enabled():
-        text = ("AI answers are off, so here are the articles of the Constitution that best match your question."
-                if hits else "No article of the Constitution matched your question. Try different words.")
-        return Answer(question=question, answer=text, mode="search", sources=sources, citations=[], removed=[])
+        return Answer(question=question,
+                      answer="AI answers are off, so here are the articles of the Constitution that best match "
+                             "your question.",
+                      mode="search", sources=sources, citations=[], removed=[])
 
     from langchain_core.output_parsers import StrOutputParser
     from langchain_core.prompts import ChatPromptTemplate

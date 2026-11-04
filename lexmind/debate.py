@@ -7,6 +7,7 @@ likely to use against you.
 """
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
@@ -126,6 +127,8 @@ def limits(section: Section, per_article: int = 2, width: int = 300) -> list[Lim
 
 
 def score(x: float) -> int:
+    if not math.isfinite(x):
+        return 0
     return int(round(min(10.0, max(0.0, x))))
 
 
@@ -148,9 +151,11 @@ def debate(library: Library, position: str, opponent: str = "", llm: Any = None)
         return Debate(position=position, opponent=opponent, mode=mode, note=note, rounds=rounds, verdict=verdict,
                       law_backed=law_backed, limits=found, sources=sources, citations=citations)
 
+    if not hits:
+        return result("search", "No article of the Constitution matched. Try different words.", [], None, {}, [])
     if llm is None and not brain.enabled():
         note = ("AI debate is off, so here are the articles on your side and the exceptions the other side is "
-                "most likely to use." if hits else "No article of the Constitution matched. Try different words.")
+                "most likely to use.")
         return result("search", note, [], None, {}, [])
 
     llm = llm or brain.default_llm()

@@ -74,9 +74,17 @@ def test_ask_with_no_verified_answer_says_so() -> None:
     assert "verified source" in body["answer"]
 
 
+def test_ask_with_ai_and_no_match_does_not_invent_sources() -> None:
+    client = TestClient(create_app(llm=fake_llm("Made up [Art. 1]."), ask_per_minute=0))
+    body = client.post("/api/ask", json={"question": "zzzzqqqq xxxyyyy"}).json()
+    assert body["mode"] == "search"
+    assert body["sources"] == [] and body["citations"] == []
+
+
 def test_ask_validation_and_rate_limit() -> None:
     client = TestClient(create_app(ask_per_minute=2))
     assert client.post("/api/ask", json={"question": "hi"}).status_code == 422
+    assert client.post("/api/ask", json={"question": "   "}).status_code == 422
     assert client.post("/api/ask", json={"question": "x" * 1001}).status_code == 422
     codes = [client.post("/api/ask", json={"question": "right to education"}).status_code for _ in range(3)]
     assert codes == [200, 200, 429]
@@ -115,3 +123,9 @@ def test_enabled_reads_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     assert brain.enabled() is True
     assert brain.default_llm().model_name == brain.DEFAULT_MODEL
+
+
+def test_invalid_rate_limit_configuration_is_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LEXMIND_ASK_PER_MINUTE", "not-a-number")
+    with pytest.raises(ValueError, match="must be an integer"):
+        create_app()

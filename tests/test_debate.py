@@ -40,6 +40,7 @@ def test_limits_none_for_plain_article(mini: Library) -> None:
 
 def test_score_is_clamped() -> None:
     assert [debate.score(x) for x in (-3, 6.6, 42)] == [0, 7, 10]
+    assert debate.score(float("nan")) == 0
 
 
 def test_debate_without_ai_returns_articles_and_exceptions(client: TestClient) -> None:
@@ -52,6 +53,13 @@ def test_debate_without_ai_returns_articles_and_exceptions(client: TestClient) -
 def test_debate_without_ai_and_no_match(client: TestClient) -> None:
     body = client.post("/api/debate", json={"position": "zzzzqqqq xxxyyyy"}).json()
     assert body["sources"] == [] and "No article" in body["note"]
+
+
+def test_debate_with_ai_and_no_match_does_not_invent_sources() -> None:
+    client = ai_client({"attacks": [{"point": "Invented", "argument": "Made up [Art. 1]."}]})
+    body = client.post("/api/debate", json={"position": "zzzzqqqq xxxyyyy"}).json()
+    assert body["mode"] == "search"
+    assert body["rounds"] == [] and body["verdict"] is None and body["sources"] == []
 
 
 def test_full_debate_checks_both_sides() -> None:
